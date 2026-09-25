@@ -24,7 +24,8 @@ resources:
     cpu: "4"
     memory: 6Gi
 
-# Each entry is a server-side mod ZIP and its dependencies, with a pinned SHA-256.
+# Only list server-side mods compatible with unmodified clients.
+# Each entry is a mod ZIP and its dependencies, with a pinned SHA-256.
 # A ZIP containing BepInEx/ overlays that tree. Other ZIPs go to plugins/<name>.
 mods: []
 #  - name: ExampleServerSideMod

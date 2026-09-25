@@ -38,7 +38,7 @@ For mods, mount a JSON file at `/config/mods.json` and add one entry per server 
 ]
 ```
 
-The ZIP is verified before extraction. An archive containing `BepInEx/` overlays that tree; other archives are installed below `BepInEx/plugins/<name>`. Only use mods that are explicitly compatible with unmodded clients. Mods adding client assets, UI, or custom networking still require matching client installs. The [RoR2 modding wiki](https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/C%23-Programming/Networking/Server-side-and-client-side-mods/) explains this distinction.
+The ZIP is verified before extraction. An archive containing `BepInEx/` overlays that tree; other archives are installed below `BepInEx/plugins/<name>`. **Clients must remain unmodified:** this container never distributes mods to players. Only list server-side mods that work with the game's existing client protocol. Mods adding client assets, UI, or custom networking generally require matching client installs and are outside this project's supported scope. The [RoR2 modding wiki](https://risk-of-thunder.github.io/R2Wiki/Mod-Creation/C%23-Programming/Networking/Server-side-and-client-side-mods/) explains this distinction.
 
 ## Run with Helm
 
