@@ -1,0 +1,9 @@
+The server will listen on UDP port {{ .Values.server.port }} inside the Pod.
+{{- if eq .Values.service.type "NodePort" }}
+Forward UDP {{ .Values.service.nodePort }} on your router to a Kubernetes node.
+Clients connect with: connect "NODE_IP:{{ .Values.service.nodePort }}"
+{{- else }}
+Use the external address of the {{ .Values.service.type }} service and UDP port {{ .Values.server.port }}.
+{{- end }}
+
+Only server-side mods can work with clients that have no mod installation.

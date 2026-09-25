@@ -1,0 +1,1 @@
+`Ror2UnofficialDedicatedServer.dll` is the Release build from [zdiemer/ror2-unofficial-dedicated-server](https://github.com/zdiemer/ror2-unofficial-dedicated-server), commit `8635424`. Rebuild and replace this DLL when updating the image.

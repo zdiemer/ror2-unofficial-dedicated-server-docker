@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ror2-server
+description: Proton-based headless Risk of Rain 2 server using a user-provided game install
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

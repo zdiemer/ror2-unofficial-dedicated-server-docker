@@ -1,0 +1,73 @@
+{{- if not .Values.game.existingClaim }}
+{{- fail "game.existingClaim must name a PVC containing the Windows game files" }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-ror2" .Release.Name | trunc 63 | trimSuffix "-" }}
+  labels:
+    app.kubernetes.io/name: ror2-server
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ror2-server
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ror2-server
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        checksum/mods: {{ .Values.mods | toJson | sha256sum }}
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ROR2_PORT
+              value: {{ .Values.server.port | quote }}
+            - name: ROR2_MAX_PLAYERS
+              value: {{ .Values.server.maxPlayers | quote }}
+            - name: ROR2_GAME_OVER_DELAY
+              value: {{ .Values.server.gameOverReturnDelaySeconds | quote }}
+          ports:
+            - name: game-udp
+              containerPort: {{ .Values.server.port }}
+              protocol: UDP
+          volumeMounts:
+            - name: game-source
+              mountPath: /game-src
+              readOnly: true
+            - name: work
+              mountPath: /work
+            - name: mods-config
+              mountPath: /config/mods.json
+              subPath: mods.json
+              readOnly: true
+          readinessProbe:
+            exec:
+              command: ["/bin/sh", "-c", "grep -q 'server=True' /work/game/BepInEx/LogOutput.log"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 30
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: game-source
+          persistentVolumeClaim:
+            claimName: {{ .Values.game.existingClaim | quote }}
+        - name: work
+          emptyDir:
+            sizeLimit: 8Gi
+        - name: mods-config
+          configMap:
+            name: {{ printf "%s-ror2-mods" .Release.Name | trunc 63 | trimSuffix "-" }}
