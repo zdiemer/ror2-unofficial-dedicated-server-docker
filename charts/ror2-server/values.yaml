@@ -6,6 +6,16 @@ image:
 game:
   # A read-only PVC containing the Windows game's files, including Risk of Rain 2.exe.
   existingClaim: ""
+  # Optional path within the PVC when the game is one folder in a larger share.
+  subPath: ""
+  # Bump after replacing the game install to refresh the persistent copy.
+  revision: "1"
+
+work:
+  persistence:
+    enabled: false
+    storageClass: ""
+    size: 16Gi
 
 server:
   port: 7777
@@ -15,6 +25,7 @@ server:
 service:
   type: NodePort
   nodePort: 30777
+  externalTrafficPolicy: Cluster
 
 resources:
   requests:

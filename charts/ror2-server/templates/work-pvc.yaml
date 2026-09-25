@@ -1,0 +1,17 @@
+{{- if .Values.work.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-ror2-work" .Release.Name | trunc 63 | trimSuffix "-" }}
+  annotations:
+    k8up.io/backup: "false"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.work.persistence.storageClass }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.work.persistence.size }}
+{{- end }}

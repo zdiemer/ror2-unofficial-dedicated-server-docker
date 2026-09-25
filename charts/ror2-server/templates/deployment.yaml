@@ -28,6 +28,15 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      initContainers:
+        - name: prepare-work
+          image: busybox:1.37
+          command: ["sh", "-c", "mkdir -p /work/game /work/home && chown 1000:1000 /work /work/game /work/home"]
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: work
+              mountPath: /work
       containers:
         - name: server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -39,6 +48,8 @@ spec:
               value: {{ .Values.server.maxPlayers | quote }}
             - name: ROR2_GAME_OVER_DELAY
               value: {{ .Values.server.gameOverReturnDelaySeconds | quote }}
+            - name: ROR2_GAME_REVISION
+              value: {{ .Values.game.revision | quote }}
           ports:
             - name: game-udp
               containerPort: {{ .Values.server.port }}
@@ -47,6 +58,9 @@ spec:
             - name: game-source
               mountPath: /game-src
               readOnly: true
+              {{- with .Values.game.subPath }}
+              subPath: {{ . | quote }}
+              {{- end }}
             - name: work
               mountPath: /work
             - name: mods-config
@@ -66,8 +80,13 @@ spec:
           persistentVolumeClaim:
             claimName: {{ .Values.game.existingClaim | quote }}
         - name: work
+          {{- if .Values.work.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-ror2-work" .Release.Name | trunc 63 | trimSuffix "-" }}
+          {{- else }}
           emptyDir:
             sizeLimit: 8Gi
+          {{- end }}
         - name: mods-config
           configMap:
             name: {{ printf "%s-ror2-mods" .Release.Name | trunc 63 | trimSuffix "-" }}

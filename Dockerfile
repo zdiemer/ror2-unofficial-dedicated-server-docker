@@ -19,7 +19,7 @@ RUN set -eux; \
     curl -fL --retry 3 "${base}/${PROTON_VERSION}-x86_64.sha512sum" -o /tmp/proton.sha512sum; \
     cd /tmp; sha512sum -c proton.sha512sum; \
     tar -xzf "${archive}" -C /opt/proton; \
-    ln -s "/opt/proton/${PROTON_VERSION}" /opt/proton/current; \
+    ln -s "/opt/proton/${PROTON_VERSION}-x86_64" /opt/proton/current; \
     curl -fL --retry 3 "https://github.com/BepInEx/BepInEx/releases/download/v${BEPINEX_VERSION}/BepInEx_win_x64_${BEPINEX_VERSION}.zip" -o /tmp/bepinex-windows.zip; \
     unzip -q /tmp/bepinex-windows.zip -d /opt/bepinex; \
     rm -f "/tmp/${archive}" /tmp/proton.sha512sum /tmp/bepinex-windows.zip

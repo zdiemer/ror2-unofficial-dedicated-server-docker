@@ -6,11 +6,31 @@ import shutil
 import tempfile
 import urllib.request
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 
 SOURCE = Path('/game-src')
 GAME = Path('/work/game')
 BEPINEX = GAME / 'BepInEx'
+COPY_MARKER = Path('/work/game-source-revision')
+
+
+def copy_game_files():
+    # SMB metadata calls have high latency. Walk directories once, then copy
+    # independent files concurrently so startup is bounded by throughput.
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        copies = []
+        for root, directories, files in os.walk(SOURCE):
+            relative = Path(root).relative_to(SOURCE)
+            destination = GAME / relative
+            destination.mkdir(parents=True, exist_ok=True)
+            for directory in directories:
+                (destination / directory).mkdir(exist_ok=True)
+            for filename in files:
+                copies.append(pool.submit(shutil.copyfile, Path(root) / filename,
+                                          destination / filename))
+        for copy in copies:
+            copy.result()
 
 
 def install_mod(mod):
@@ -53,7 +73,17 @@ def install_mod(mod):
 def main():
     if not (SOURCE / 'Risk of Rain 2.exe').is_file():
         raise FileNotFoundError('Mount a current Windows game install at /game-src')
-    shutil.copytree(SOURCE, GAME, dirs_exist_ok=True)
+    revision = os.environ.get('ROR2_GAME_REVISION', '1')
+    if COPY_MARKER.is_file() and COPY_MARKER.read_text() == revision and (GAME / 'Risk of Rain 2.exe').is_file():
+        print(f'Reusing staged game revision {revision}', flush=True)
+    else:
+        COPY_MARKER.unlink(missing_ok=True)
+        if GAME.exists():
+            shutil.rmtree(GAME)
+        GAME.mkdir(parents=True)
+        copy_game_files()
+        COPY_MARKER.write_text(revision)
+        print(f'Staged game revision {revision}', flush=True)
     shutil.copytree('/opt/bepinex', GAME, dirs_exist_ok=True)
 
     config = BEPINEX / 'config' / 'com.zdiemer.ror2.unofficialdedicatedserver.cfg'

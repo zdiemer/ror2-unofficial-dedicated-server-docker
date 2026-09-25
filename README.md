@@ -2,7 +2,10 @@
 
 Proton container and Helm chart for the [unofficial dedicated server plugin](https://github.com/zdiemer/ror2-unofficial-dedicated-server). The image includes GE-Proton, BepInEx, and the plugin DLL. It does **not** include Risk of Rain 2 game files or DLC. Supply your own current Windows game install as a read-only mount or Kubernetes PVC.
 
-This is experimental. The plugin's Windows scratch test booted without Steam desktop, bound UDP 7777, and had no local user. Proton startup and remote client connections still need a homelab test. The current direct-IP path does not validate Steam tickets; use a trusted network while testing.
+This is experimental. The homelab Proton deployment boots without Steam desktop,
+loads the plugin, and binds UDP 7777. A tailnet client connected, readied in the
+lobby, and started a run. Game-over and disconnect reset remain unverified. The
+current direct-IP path does not validate Steam tickets; use a trusted network.
 
 ## Build the image
 
@@ -67,3 +70,15 @@ kubectl logs deployment/ror2-ror2 -f
 Forward UDP 30777 to a cluster node, then use `connect "NODE_IP:30777"` in the game console. The chart uses one replica and `Recreate` strategy to avoid two servers sharing a game PVC. Changing the `mods` list rolls the Pod. Each listed mod is downloaded and applied on startup; pin ZIP checksums so restarts use the same content.
 
 The plugin's `Port`, `MaxPlayers`, and game-over return delay come from `server` values. `service.nodePort` can differ from `server.port` because Kubernetes forwards UDP to the container port. The chart's readiness probe waits until the plugin logs an initialized, active server.
+
+If the game install is a folder within a shared PVC, set `game.subPath` to that
+folder's path within the claim. On clusters that publish the game port on node
+IPs, set `service.type: LoadBalancer`; `service.externalTrafficPolicy` defaults
+to `Cluster`. Keep the direct-IP listener on a trusted network while the plugin
+does not validate Steam tickets.
+
+For a large install, enable `work.persistence` with a storage class and size
+large enough for the game and Proton prefix. Startup stages the game once and
+reuses it on later pod starts. After updating the source install, bump
+`game.revision` to replace the staged copy. The work claim is excluded from
+backups because its contents can be rebuilt from the source game install.
